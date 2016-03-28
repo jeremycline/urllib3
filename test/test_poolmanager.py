@@ -1,6 +1,10 @@
 import unittest
 
-from urllib3.poolmanager import PoolManager, SSL_KEYWORDS
+from urllib3.poolmanager import (
+    PoolManager,
+    SSL_KEYWORDS,
+    pool_classes_by_scheme,
+)
 from urllib3 import connection_from_url
 from urllib3.exceptions import (
     ClosedPoolError,
@@ -86,6 +90,18 @@ class TestPoolManager(unittest.TestCase):
         self.assertRaises(ClosedPoolError, conn_pool._get_conn)
 
         self.assertEqual(len(p.pools), 0)
+
+    def test_pool_classes_by_scheme_unmodified(self):
+        """Assert that each PoolManager has a copy of pool_classes_by_scheme.
+
+        This allows each instance of PoolManager to have its own mapping of
+        scheme to connection class that it is free to modify.
+        """
+        p = PoolManager()
+        p.pool_classes_by_scheme['ftp'] = 'some_connection_class'
+
+        self.assertNotIn('ftp', pool_classes_by_scheme)
+        self.assertIn('ftp', p.pool_classes_by_scheme)
 
     def test_pools_keyed_on_ssl_arguments_from_host(self):
         ssl_kw = {
